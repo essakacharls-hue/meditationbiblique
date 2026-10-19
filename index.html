@@ -77,6 +77,13 @@ body.locked{overflow:hidden}
 .errcard details{margin:6px 0 10px;font-size:.9rem}.errcard summary{cursor:pointer;font-weight:700;color:var(--accent)}
 .warncard{border:1px solid var(--gold);background:var(--gold-soft);margin-bottom:14px}.warncard p{margin:6px 0 0;font-size:.9rem}
 .sync .dot{display:none!important}
+
+#dispbox{display:grid;gap:12px}#dispbox>b .ic{width:17px;height:17px;vertical-align:-3px;margin-right:6px}
+.dsrow{display:flex;align-items:center;gap:10px;margin-top:6px}.dsrow input{flex:1;accent-color:var(--accent)}
+.dschips{display:flex;flex-wrap:wrap;gap:8px}
+.dsprev{border:1px dashed var(--line);border-radius:12px;padding:12px 14px;background:var(--bg)}
+.dsv{margin:0 0 4px;font-style:italic;font-size:1.05rem;color:var(--accent)}
+#dbz{accent-color:var(--gold)}
 </style>
 <title>Programme de Méditation</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800&display=swap">
@@ -1548,6 +1555,39 @@ document.addEventListener('submit',async e=>{const f=e.target;if(f.id!=='gatef')
     if(k&&k===SYNC.key){showGate('create','Code accepté. Choisissez un nouveau mot de passe.');}else{gateTries++;msg.textContent='Code secret incorrect.';}}},true);
 document.addEventListener('visibilitychange',()=>{if(!PWD)return;if(document.visibilityState==='hidden')hiddenAt=Date.now();else if(hiddenAt&&!LOCKED){const d=LOCKDLY();if(d>=0&&Date.now()-hiddenAt>=d*60000)lockNow();hiddenAt=0;}});
 function adoptServerPwd(sp){if(!sp||!sp.hash)return false;if(!PWD||PWD.legacy||PWD.first||(sp.maj||'')>(PWD.maj||'')){if(!PWD||sp.hash!==PWD.hash){storePwd(sp);toast('Le mot de passe de l\'appli est maintenant celui du classeur.');}else if(PWD.first){storePwd(sp);}return true;}return (sp.maj||'')===(PWD.maj||'');}
+/* ===== Affichage : taille et police du texte (réglage propre à chaque appareil) ===== */
+const FONTS={
+  sansation:{n:'Sansation (par défaut)',f:"'Sansation','Exo 2',system-ui,sans-serif"},
+  systeme:{n:'Police du téléphone',f:"system-ui,-apple-system,'Segoe UI',Roboto,sans-serif"},
+  atkinson:{n:'Atkinson – très lisible',f:"'Atkinson Hyperlegible',system-ui,sans-serif",g:'Atkinson+Hyperlegible:wght@400;700'},
+  nunito:{n:'Nunito – arrondie',f:"'Nunito',system-ui,sans-serif",g:'Nunito:wght@400;600;700;800'},
+  poppins:{n:'Poppins – moderne',f:"'Poppins',system-ui,sans-serif",g:'Poppins:wght@400;500;600;700'},
+  verdana:{n:'Verdana – large',f:"Verdana,Tahoma,'DejaVu Sans',sans-serif"},
+  lora:{n:'Lora – livre (avec empattements)',f:"'Lora',Georgia,serif",g:'Lora:wght@400;600;700'},
+  merriweather:{n:'Merriweather – lecture',f:"'Merriweather',Georgia,serif",g:'Merriweather:wght@400;700;900'},
+  georgia:{n:'Georgia – classique',f:"Georgia,'Times New Roman',serif"}};
+let DISP={size:100,font:'sansation',bible:100};
+try{DISP=Object.assign(DISP,JSON.parse(localStorage.getItem('medit-disp')||'{}'));}catch(e){}
+function applyDisp(){const F=FONTS[DISP.font]||FONTS.sansation;let st=document.getElementById('userdisp');if(!st){st=document.createElement('style');st.id='userdisp';document.head.appendChild(st);}
+  const k=Math.max(70,Math.min(170,+DISP.size||100))/100,kb=Math.max(80,Math.min(200,+DISP.bible||100))/100;
+  st.textContent='html{font-size:'+(16*k).toFixed(2)+'px}body{font-size:.9375rem}:root{--font:'+F.f+'}body,button,input,select,textarea,.gate,.gate-in input{font-family:'+F.f+'}'+
+   '.vrow,.cmpr{font-size:'+kb+'em}';
+  if(F.g&&!document.getElementById('gf-'+DISP.font)){const l=document.createElement('link');l.id='gf-'+DISP.font;l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family='+F.g+'&display=swap';document.head.appendChild(l);}}
+function saveDisp(){try{localStorage.setItem('medit-disp',JSON.stringify(DISP));}catch(e){}applyDisp();}
+applyDisp();
+function dispCard(){const sz=[[85,'Petit'],[100,'Normal'],[115,'Grand'],[130,'Très grand'],[150,'Énorme']];
+  return '<div class="card" id="dispbox"><b>'+ic('pen')+'Affichage du texte</b><p class="muted">Réglé pour cet appareil seulement : le téléphone et le PC peuvent avoir des réglages différents.</p>'+
+  '<label class="f">Taille du texte : <span id="dszv">'+DISP.size+' %</span><span class="dsrow"><button class="btn small" data-disp="minus" aria-label="Plus petit">A−</button><input type="range" id="dsz" min="70" max="170" step="5" value="'+DISP.size+'"><button class="btn small" data-disp="plus" aria-label="Plus grand">A+</button></span></label>'+
+  '<div class="dschips">'+sz.map(([v,l])=>'<button class="pchip" data-disp="set" data-v="'+v+'" aria-pressed="'+(+DISP.size===v)+'">'+l+'</button>').join('')+'</div>'+
+  '<label class="f">Police<select id="dfont">'+Object.keys(FONTS).map(k=>'<option value="'+k+'" '+(DISP.font===k?'selected':'')+' style="font-family:'+FONTS[k].f.replace(/"/g,'')+'">'+FONTS[k].n+'</option>').join('')+'</select></label>'+
+  '<label class="f">Taille du texte biblique (en plus) : <span id="dbzv">'+DISP.bible+' %</span><input type="range" id="dbz" min="80" max="200" step="10" value="'+DISP.bible+'"></label>'+
+  '<div class="dsprev"><p class="dsv">« Ta parole est une lampe à mes pieds, et une lumière sur mon sentier. »</p><p class="muted" style="margin:0">Psaume 119:105 · Aperçu du texte</p></div>'+
+  '<button class="btn" data-disp="reset">Revenir au réglage d\'origine</button></div>';}
+document.addEventListener('input',e=>{const t=e.target;if(t.id==='dsz'){DISP.size=+t.value;$('#dszv').textContent=t.value+' %';saveDisp();}if(t.id==='dbz'){DISP.bible=+t.value;$('#dbzv').textContent=t.value+' %';saveDisp();}});
+document.addEventListener('change',e=>{const t=e.target;if(t.id==='dfont'){DISP.font=t.value;saveDisp();toast('Police : '+FONTS[t.value].n.split(' –')[0]);}if(t.id==='dsz'||t.id==='dbz')render();});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-disp]');if(!b)return;e.preventDefault();const a=b.dataset.disp;
+  if(a==='minus')DISP.size=Math.max(70,DISP.size-5);if(a==='plus')DISP.size=Math.min(170,DISP.size+5);if(a==='set')DISP.size=+b.dataset.v;if(a==='reset')DISP={size:100,font:'sansation',bible:100};
+  saveDisp();render();});
 /* réglages */
 function vSet(){
   let h='<div class="card"><div class="row"><label class="f">Séances par jour<select id="pace">'+[1,2,3,4,5].map(x=>'<option '+(+CFG.pace===x?'selected':'')+'>'+x+'</option>').join('')+'</select></label><label class="f">Date de début du programme<input type="date" id="start" value="'+esc(CFG.start||'')+'"></label></div><p class="muted" style="margin-bottom:0">Le rythme décide combien de séances s\'affichent dans « Aujourd\'hui » et sert à calculer l\'avance ou le retard.</p></div>';
@@ -1560,6 +1600,7 @@ function vSet(){
   h+='<div class="card" id="pwdbox"><b>'+ic('lock')+'Mot de passe d\'ouverture</b><p class="muted">L\'appli demande ce mot de passe à chaque ouverture'+(SYNC.url?'. Il est commun à tous les appareils reliés au classeur : le changer ici le change partout.':' sur cet appareil.')+(PWD&&PWD.maj?' Dernière modification : '+esc(frDT(PWD.maj))+(PWD.par?' ('+esc(PWD.par)+')':'')+'.':'')+'</p>'+
    '<form class="pwdform" data-form="pwd"><label class="f">Mot de passe actuel<input type="password" id="pw0" autocomplete="current-password"></label><label class="f">Nouveau mot de passe<input type="password" id="pw1" autocomplete="new-password"></label><label class="f">Confirmez le nouveau<input type="password" id="pw2" autocomplete="new-password"></label><button class="btn primary" type="submit">'+ic('check')+'Changer le mot de passe</button></form>'+
    '<div class="row" style="margin-top:12px;align-items:flex-end"><label class="f">Reverrouiller l\'appli après<select id="lockdly">'+[[0,'Dès qu\'on la quitte'],[1,'1 minute'],[5,'5 minutes'],[15,'15 minutes'],[60,'1 heure'],[-1,'Seulement à l\'ouverture']].map(([v,l])=>'<option value="'+v+'" '+(LOCKDLY()===v?'selected':'')+'>'+l+'</option>').join('')+'</select></label><button class="btn" data-act="locknow">'+ic('lock')+'Verrouiller maintenant</button></div></div>';
+  h+=dispCard();
   h+='<div class="card"><b>Installer l\'appli</b><p class="muted">'+(window.matchMedia('(display-mode: standalone)').matches?'L\'appli est installée sur cet appareil.':'Installez l\'appli pour l\'ouvrir depuis l\'écran d\'accueil, même sans réseau. Sur iPhone : Partager, puis « Sur l\'écran d\'accueil ». Sur Android : menu ⋮, puis « Installer l\'application ».')+'</p>'+(installEvt?'<button class="btn primary" data-act="install">Installer maintenant</button>':'')+'</div>';
   h+='<div class="card"><b>Rédiger les sujets</b><p class="muted" style="margin-bottom:0">Formulez chaque sujet à l\'impératif, à la première personne du pluriel : « Prions pour que… », « Rendons grâce parce que… », « Brisons… », « Demandons pardon pour… », suivi du verset entre parenthèses, par exemple (v. 3).</p></div>';
   return h;}
