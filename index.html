@@ -472,7 +472,10 @@ const NOT=39;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const todayISO=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
-const frDate=iso=>{if(!iso)return '';const [y,m,d]=iso.split('-');return d+'/'+m+'/'+y;};
+const frDate=iso=>{if(!iso)return '';const [y,m,d]=String(iso).slice(0,10).split('-');if(!d)return String(iso);return d+'/'+m+'/'+y.slice(-2);};
+const p2=n=>String(n).padStart(2,'0');
+const jma=dt=>p2(dt.getDate())+'/'+p2(dt.getMonth()+1)+'/'+String(dt.getFullYear()).slice(-2);
+const hm24=dt=>p2(dt.getHours())+':'+p2(dt.getMinutes());
 const SRC={base:'Programme',manuel:'Ajouté',import:'Importé',ia:'Claude'};
 
 let OV={};              // état par séance : {done,date,notes,theme,keys,subj:[{t,p,s}]}
@@ -777,7 +780,7 @@ async function expDocx(){
 function vStat(){
   const c=counts();let h='<div class="summary"><div><span>Séances faites</span><b>'+c.d+'</b></div><div><span>Avancement</span><b>'+(100*c.d/TOTAL).toFixed(1)+' %</b></div><div><span>Sujets de prière</span><b>'+c.sj+'</b></div><div><span>Sujets priés</span><b>'+c.pr+'</b></div></div>';
   const rest=TOTAL-c.d,p=+CFG.pace||1,end=new Date();end.setDate(end.getDate()+Math.ceil(rest/p));
-  h+='<div class="pace">Il reste <b>'+rest+'</b> séances. Au rythme de '+p+' par jour, vous terminerez vers le <b>'+end.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+'</b>.</div>';
+  h+='<div class="pace">Il reste <b>'+rest+'</b> séances. Au rythme de '+p+' par jour, vous terminerez vers le <b>'+jma(end)+'</b>.</div>';
   h+=paceInfo(c);
   const per={};for(let n=1;n<=TOTAL;n++){const bi=S[n-1][1];per[bi]=per[bi]||[0,0];per[bi][1]++;if(isDone(n))per[bi][0]++;}
   [['Ancien Testament',0,NOT],['Nouveau Testament',NOT,BOOKS.length]].forEach(([lab,a,b])=>{
@@ -841,8 +844,8 @@ function readings(p){
 const addDays=(iso,n)=>{const [y,m,d]=iso.split('-').map(Number);const t=new Date(Date.UTC(y,m-1,d+n));return t.toISOString().slice(0,10);};
 const diffDays=(a,b)=>Math.round((Date.parse(b+'T00:00:00Z')-Date.parse(a+'T00:00:00Z'))/864e5);
 const localISO=iso=>{const d=new Date(iso);if(isNaN(d))return String(iso).slice(0,10);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
-const frDT=iso=>{if(!iso)return '';const d=new Date(iso);if(isNaN(d))return frDate(iso.slice(0,10));return d.toLocaleDateString('fr-FR')+' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});};
-const frDay=iso=>{const [y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});};
+const frDT=iso=>{if(!iso)return '';const d=new Date(iso);if(isNaN(d))return frDate(iso.slice(0,10));return jma(d)+' à '+hm24(d);};
+const frDay=iso=>{const [y,m,d]=iso.split('-').map(Number);const dt=new Date(y,m-1,d);return dt.toLocaleDateString('fr-FR',{weekday:'short'})+' '+jma(dt);};
 function schedule(p){
   const R=readings(p),done=p.done||{},days=[];
   if(!p.recal){R.forEach((r,i)=>days.push({date:addDays(p.start,i),idx:[i]}));}
@@ -907,7 +910,7 @@ function vLect(){
     '<div class="rdlist" style="margin-top:10px">'+st.late.slice(-14).map(d=>readHTML(p,d,true)).join('')+'</div>'+(st.late.length>14?'<p class="muted">… et '+(st.late.length-14)+' jours plus anciens.</p>':'')+'</div>';
   }
   const tday=st.S.filter(d=>d.date===td);
-  h+='<h2 class="sec">'+ic('cal')+'Lecture du '+esc(new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}))+'</h2>';
+  h+='<h2 class="sec">'+ic('cal')+'Lecture du '+esc(new Date().toLocaleDateString('fr-FR',{weekday:'long'})+' '+jma(new Date()))+'</h2>';
   if(tday.length)h+='<div class="rdlist big">'+tday.map(d=>readHTML(p,d,false)).join('')+'</div>';
   else if(td<p.start)h+='<div class="empty">Le plan commence le '+frDate(p.start)+'.</div>';
   else h+='<div class="empty">'+(st.nd===st.total?'Plan terminé. Gloire à Dieu !':'Pas de lecture prévue aujourd\'hui.')+'</div>';
@@ -1439,7 +1442,7 @@ const API_URL='__API_URL__',API_KEY='__API_KEY__';const FROM_GOOGLE=/^https:\/\/
 let FUSEAU='';let QUEUE=[],SYNCERR='',flushing=false,lastPull=0,installEvt=null;
 const gerr=e=>toast('Erreur : '+((e&&e.message)||e||'inconnue'));
 async function persist(){await IDB.set('state',{OV,CFG,PLANS,TEACH});await IDB.set('queue',QUEUE);}
-function shortDT(iso){const d=new Date(iso);if(isNaN(d))return '';const hm=String(d.getHours()).padStart(2,'0')+'h'+String(d.getMinutes()).padStart(2,'0');const t=new Date();t.setHours(0,0,0,0);const j=new Date(d);j.setHours(0,0,0,0);const df=Math.round((t-j)/864e5);return df===0?'auj. '+hm:df===1?'hier '+hm:String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+' '+hm;}
+function shortDT(iso){const d=new Date(iso);if(isNaN(d))return '';const hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');const t=new Date();t.setHours(0,0,0,0);const j=new Date(d);j.setHours(0,0,0,0);const df=Math.round((t-j)/864e5);return df===0?'auj. '+hm:df===1?'hier '+hm:String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getFullYear()).slice(-2)+' '+hm;}
 function devName(){if(SYNC.name)return SYNC.name;const u=navigator.userAgent;return /iPhone|iPad/.test(u)?'iPhone':/Android/.test(u)?'Téléphone Android':'Ordinateur';}
 function devList(){return Object.keys(SYNC.dev||{}).map(k=>({k,vu:SYNC.dev[k].vu||'',envoi:SYNC.dev[k].envoi||''})).sort((a,b)=>a.vu<b.vu?1:-1);}
 function updWho(){const el=$('#hdrSync');if(!el)return;const L=devList();if(!SYNC.url||!L.length){el.textContent='';return;}const me=devName();
