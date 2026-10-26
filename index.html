@@ -288,7 +288,7 @@ table.t td.c{white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-
 @media (max-width:520px){.rd{grid-template-columns:minmax(0,1fr)}}
 /* texte biblique */
 .btxt{display:grid;gap:8px}
-.bth{font-size:.8rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.bth .btn{white-space:nowrap}.bth{font-size:.8rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0;display:flex;justify-content:space-between;gap:8px;align-items:center}
 .ptxt{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
 .phead,.vrow{display:grid;grid-template-columns:2.4em repeat(var(--n),minmax(0,1fr));gap:12px;padding:6px 10px}
 .phead{background:var(--bg);border-bottom:1px solid var(--line);font-size:.85rem;align-items:center}
@@ -1120,7 +1120,7 @@ function keySet(n){const s=sess(n),r=S[n-1],c0=r[7],set=new Set();if(/tout/i.tes
 function sessRanges(n){const r=S[n-1];return[{b:r[1],c1:r[7],v1:r[8],c2:r[9],v2:r[10]}];}
 function unitsToRanges(us){const R=[];us.forEach(u=>{const L=R[R.length-1];if(L&&L.b===u.b&&((u.c===L.c2&&u.a===L.v2+1)||(u.c===L.c2+1&&u.a===1&&L.v2===VC[u.b][L.c2-1]))){L.c2=u.c;L.v2=u.z;}else R.push({b:u.b,c1:u.c,v1:u.a,c2:u.c,v2:u.z});});return R;}
 function textBlock(id,ranges,hl){const hide=UI.hideTxt&&UI.hideTxt[id];
-  return '<section class="btxt"><h3 class="bth">'+ic('book')+'<span style="flex:1">Texte biblique</span><button class="btn small" data-act="txttog" data-id="'+esc(id)+'">'+(hide?'Afficher le texte':'Masquer le texte')+'</button></h3>'+(hide?'':versionChips()+passageHTML(ranges,hl))+'</section>';}
+  return '<section class="btxt"><h3 class="bth">'+ic('book')+'<span style="flex:1">Texte biblique</span>'+fsBtn()+'<button class="btn small" data-act="txttog" data-id="'+esc(id)+'">'+(hide?'Afficher le texte':'Masquer le texte')+'</button></h3>'+(hide?'':versionChips()+passageHTML(ranges,hl))+'</section>';}
 
 const normB=x=>x.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
 function parseVerses(str){const set=new Set();String(str||'').split(/[,;]/).forEach(p=>{const m=p.trim().match(/^(\d+)(?:\s*-\s*(\d+))?$/);if(m){const a=+m[1],z=+(m[2]||m[1]);for(let v=Math.min(a,z);v<=Math.max(a,z)&&v-a<200;v++)set.add(v);}});return [...set].sort((a,b)=>a-b);}
@@ -1481,6 +1481,13 @@ async function tExport(list,all){
   const name=all?'Mes_enseignements_'+todayISO()+'.docx':'Enseignement_'+(t.date||todayISO())+(t.titre?'_'+safe(t.titre):'')+'.docx';
   await save(name,await z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));}
 
+/* ----- lecture en plein écran ----- */
+const FS_OK=!!(document.fullscreenEnabled||document.webkitFullscreenEnabled);
+function fsOn(){return !!(document.fullscreenElement||document.webkitFullscreenElement);}
+function fsBtn(){return FS_OK?'<button class="btn small" data-act="fstog" title="Plein écran">'+(fsOn()?'⤡ Quitter le plein écran':'⛶ Plein écran')+'</button>':'';}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="fstog"]');if(!b)return;e.preventDefault();e.stopPropagation();
+  try{if(fsOn())(document.exitFullscreen||document.webkitExitFullscreen).call(document);else{const el=document.documentElement;(el.requestFullscreen||el.webkitRequestFullscreen).call(el);}}catch(_){toast('Plein écran indisponible sur cet appareil.');}},true);
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>render()));
 /* ===== Méditation guidée pas à pas (fiche de méditation) — v2 ===== */
 const FSTEPS=[
   {ic:'lamp',t:'Préparer',s:'Silence, prière et passage du jour'},
@@ -1521,7 +1528,7 @@ function fHint(t){return '<p class="fhint">'+t+'</p>';}
 function fH3(t,i){return '<h3 class="fh3">'+(i?'<span class="pnum">'+i+'</span>':'')+t+'</h3>';}
 
 function ficheHTML(){const n=UI.fiche,f=UI.fdraft,st=f.step,S0=FSTEPS[st],s=sess(n),R=f.mode==='rapide',L=fSteps(f),pos=L.indexOf(st);
-  let h='<div class="inner fiche"><div class="bar"><button class="btn" data-act="fclose">'+ic('left')+'Fermer</button><span class="row" style="flex:0 0 auto;gap:6px"><span class="fmode">'+(R?'⚡ Rapide':'📖 Complet')+'</span><button class="btn small" data-act="fexp">'+ic('down')+'Word</button></span></div>';
+  let h='<div class="inner fiche"><div class="bar"><button class="btn" data-act="fclose">'+ic('left')+'Fermer</button><span class="row" style="flex:0 0 auto;gap:6px">'+fsBtn()+'<span class="fmode">'+(R?'⚡ Rapide':'📖 Complet')+'</span><button class="btn small" data-act="fexp">'+ic('down')+'Word</button></span></div>';
   h+='<div class="fhead"><span class="no">SÉANCE '+n+' · '+esc(s.ref)+'</span><h2>'+ic(S0.ic)+(st?'Étape '+st+' · ':'')+S0.t+'</h2><p>'+S0.s+'</p></div>';
   h+='<div class="fsteps" style="grid-template-columns:repeat('+L.length+',1fr)">'+L.map(i=>'<button class="fst'+(i===st?' on':'')+(L.indexOf(i)<pos?' past':'')+'" data-act="fgo" data-i="'+i+'" title="'+esc(FSTEPS[i].t)+'"><span>'+(i?i:ic('lamp'))+'</span><em>'+FSTEPS[i].t+'</em></button>').join('')+'</div>';
   h+='<div class="card fbody">';
@@ -1794,12 +1801,12 @@ const FONTS={
   lora:{n:'Lora – livre (avec empattements)',f:"'Lora',Georgia,serif",g:'Lora:wght@400;600;700'},
   merriweather:{n:'Merriweather – lecture',f:"'Merriweather',Georgia,serif",g:'Merriweather:wght@400;700;900'},
   georgia:{n:'Georgia – classique',f:"Georgia,'Times New Roman',serif"}};
-let DISP={size:100,font:'sansation',bible:100};
+let DISP={size:100,font:'sansation',bible:100,width:'large'};
 try{DISP=Object.assign(DISP,JSON.parse(localStorage.getItem('medit-disp')||'{}'));}catch(e){}
 function applyDisp(){const F=FONTS[DISP.font]||FONTS.sansation;let st=document.getElementById('userdisp');if(!st){st=document.createElement('style');st.id='userdisp';document.head.appendChild(st);}
   const k=Math.max(70,Math.min(170,+DISP.size||100))/100,kb=Math.max(80,Math.min(200,+DISP.bible||100))/100;
   st.textContent='html{font-size:'+(16*k).toFixed(2)+'px}body{font-size:.9375rem}:root{--font:'+F.f+'}body,button,input,select,textarea,.gate,.gate-in input{font-family:'+F.f+'}'+
-   '.vrow,.cmpr{font-size:'+kb+'em}';
+   '.vrow,.cmpr{font-size:'+kb+'em}'+'.wrap,.ovl .inner{max-width:'+({normal:'900px',large:'1280px',full:'none'}[DISP.width]||'1280px')+'}';
   if(F.g&&!document.getElementById('gf-'+DISP.font)){const l=document.createElement('link');l.id='gf-'+DISP.font;l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family='+F.g+'&display=swap';document.head.appendChild(l);}}
 function saveDisp(){try{localStorage.setItem('medit-disp',JSON.stringify(DISP));}catch(e){}applyDisp();}
 applyDisp();
@@ -1809,12 +1816,13 @@ function dispCard(){const sz=[[85,'Petit'],[100,'Normal'],[115,'Grand'],[130,'Tr
   '<div class="dschips">'+sz.map(([v,l])=>'<button class="pchip" data-disp="set" data-v="'+v+'" aria-pressed="'+(+DISP.size===v)+'">'+l+'</button>').join('')+'</div>'+
   '<label class="f">Police<select id="dfont">'+Object.keys(FONTS).map(k=>'<option value="'+k+'" '+(DISP.font===k?'selected':'')+' style="font-family:'+FONTS[k].f.replace(/"/g,'')+'">'+FONTS[k].n+'</option>').join('')+'</select></label>'+
   '<label class="f">Taille du texte biblique (en plus) : <span id="dbzv">'+DISP.bible+' %</span><input type="range" id="dbz" min="80" max="200" step="10" value="'+DISP.bible+'"></label>'+
+  '<label class="f">Largeur de l\'écran (surtout sur PC)</label><div class="dschips">'+[['normal','Normale'],['large','Large'],['full','Tout l\'écran']].map(([v,l])=>'<button class="pchip" data-disp="width" data-v="'+v+'" aria-pressed="'+(DISP.width===v)+'">'+l+'</button>').join('')+'</div>'+
   '<div class="dsprev"><p class="dsv">« Ta parole est une lampe à mes pieds, et une lumière sur mon sentier. »</p><p class="muted" style="margin:0">Psaume 119:105 · Aperçu du texte</p></div>'+
   '<button class="btn" data-disp="reset">Revenir au réglage d\'origine</button></div>';}
 document.addEventListener('input',e=>{const t=e.target;if(t.id==='dsz'){DISP.size=+t.value;$('#dszv').textContent=t.value+' %';saveDisp();}if(t.id==='dbz'){DISP.bible=+t.value;$('#dbzv').textContent=t.value+' %';saveDisp();}});
 document.addEventListener('change',e=>{const t=e.target;if(t.id==='dfont'){DISP.font=t.value;saveDisp();toast('Police : '+FONTS[t.value].n.split(' –')[0]);}if(t.id==='dsz'||t.id==='dbz')render();});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-disp]');if(!b)return;e.preventDefault();const a=b.dataset.disp;
-  if(a==='minus')DISP.size=Math.max(70,DISP.size-5);if(a==='plus')DISP.size=Math.min(170,DISP.size+5);if(a==='set')DISP.size=+b.dataset.v;if(a==='reset')DISP={size:100,font:'sansation',bible:100};
+  if(a==='minus')DISP.size=Math.max(70,DISP.size-5);if(a==='plus')DISP.size=Math.min(170,DISP.size+5);if(a==='set')DISP.size=+b.dataset.v;if(a==='width')DISP.width=b.dataset.v;if(a==='reset')DISP={size:100,font:'sansation',bible:100,width:'large'};
   saveDisp();render();});
 /* réglages */
 function vSet(){
