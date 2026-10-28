@@ -461,6 +461,40 @@ details.steps ol li::marker{color:var(--gold);font-weight:800}
 .toast{border-radius:12px;box-shadow:var(--shadow)}
 .ovl .inner>.bar .btn{background:var(--surface)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ----- disposition robuste quand le texte est agrandi ----- */
+.sess-b,.fbody,.tedit,#dispbox,.btxt,.cmpl,.tf,.fpr,.facts,.fspeck,.card{min-width:0}
+.sess-b,.fbody,.tedit,#dispbox,.btxt{grid-template-columns:minmax(0,1fr)}
+.wrap,.ovl .inner{min-width:0}
+h1,h2,h3,.ref,.theme,.ttl,.tref,.fhead h2,.fhead .no,.fcall b,.fcall span,.vt,.tx,.muted,p,label,.chip,.meta span{overflow-wrap:anywhere;word-break:normal}
+.row,.meta,.ovl .bar,.tbar,.fnav,.bth,.fcall,.pager,.dschips,.fchips,.flect,.tfh,.fprh,.hero-top{flex-wrap:wrap}
+.meta span,.chip{max-width:100%;white-space:normal}
+.btn{max-width:100%;white-space:normal;text-align:center;line-height:1.25}
+input,select,textarea,img,table{max-width:100%}
+.fcall>div{flex:1 1 220px;min-width:0}
+.ovl .bar>.row{flex-wrap:wrap;justify-content:flex-end}
+.fnav .btn{min-width:0}
+/* barre d'onglets : taille fixe, quelle que soit la taille du texte */
+nav.tabs button{font-size:13px}
+@media (max-width:720px){nav.tabs button{font-size:9.5px!important;letter-spacing:0!important}nav.tabs button .ic{width:21px!important;height:21px!important}}
+html.narrow nav.tabs{display:grid!important;grid-template-columns:repeat(9,minmax(0,1fr))!important}
+html.tiny nav.tabs .ts{display:none!important}
+html.tiny nav.tabs button{padding:10px 0!important}
+/* étapes de la fiche : seules les pastilles sur écran étroit, le titre de l'étape est déjà en haut */
+html.narrow .fst em{display:none}
+html.narrow .fst span{width:30px;height:30px;font-size:14px}
+.fsteps{gap:4px}
+/* texte biblique agrandi : les numéros de versets restent lisibles */
+.vrow{overflow-wrap:anywhere}
+.cmpr{grid-template-columns:minmax(3.5em,auto) minmax(0,1fr)}
+html.narrow .cmpr{grid-template-columns:minmax(0,1fr)}
+html.narrow .fmot{grid-template-columns:auto minmax(0,1fr)}html.narrow .fmot .arr{display:none}html.narrow .fmot input[data-k="d"]{grid-column:2}html.narrow .fmot .btn{grid-column:2;justify-self:end}
+html.narrow .row>.f,html.narrow .row>label{flex:1 1 100%}
+html.narrow .summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+html.tiny .summary{grid-template-columns:minmax(0,1fr)}
+.ovl .bar>.row{flex:1 1 auto!important;min-width:0}
+html.narrow .fmode{display:none}
+html.narrow .ovl .bar .btn.small{padding:6px 10px}
 </style>
 </head><body>
 
@@ -1807,7 +1841,14 @@ function applyDisp(){const F=FONTS[DISP.font]||FONTS.sansation;let st=document.g
   const k=Math.max(70,Math.min(170,+DISP.size||100))/100,kb=Math.max(80,Math.min(200,+DISP.bible||100))/100;
   st.textContent='html{font-size:'+(16*k).toFixed(2)+'px}body{font-size:.9375rem}:root{--font:'+F.f+'}body,button,input,select,textarea,.gate,.gate-in input{font-family:'+F.f+'}'+
    '.vrow,.cmpr{font-size:'+kb+'em}'+'.wrap,.ovl .inner{max-width:'+({normal:'900px',large:'1280px',full:'none'}[DISP.width]||'1280px')+'}';
+  scaleMedia(k);
   if(F.g&&!document.getElementById('gf-'+DISP.font)){const l=document.createElement('link');l.id='gf-'+DISP.font;l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family='+F.g+'&display=swap';document.head.appendChild(l);}}
+/* Les seuils d'affichage (téléphone / PC) suivent la taille du texte : un texte agrandi utilise la disposition « téléphone » plus tôt. */
+const MQ_ORIG=new Map();
+function scaleMedia(k){document.querySelectorAll('style:not(#userdisp)').forEach(st=>{if(!MQ_ORIG.has(st))MQ_ORIG.set(st,st.textContent);const o=MQ_ORIG.get(st);
+  if(!/@media/.test(o))return;const t=k===1?o:o.replace(/\((max|min)-width:\s*(\d+)px\)/g,(m,w,n)=>'('+w+'-width:'+Math.round(+n*k)+'px)');if(st.textContent!==t)st.textContent=t;});
+  const eff=window.innerWidth/k;document.documentElement.classList.toggle('narrow',eff<560);document.documentElement.classList.toggle('tiny',eff<380);}
+window.addEventListener('resize',()=>{const k=Math.max(70,Math.min(170,+DISP.size||100))/100;scaleMedia(k);});
 function saveDisp(){try{localStorage.setItem('medit-disp',JSON.stringify(DISP));}catch(e){}applyDisp();}
 applyDisp();
 function dispCard(){const sz=[[85,'Petit'],[100,'Normal'],[115,'Grand'],[130,'Très grand'],[150,'Énorme']];
