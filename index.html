@@ -504,6 +504,16 @@ html.narrow .ovl .bar .btn.small{padding:6px 10px}
 .fchk{display:flex;gap:10px;align-items:flex-start;padding:7px 4px;border-radius:10px;cursor:pointer;line-height:1.45}
 .fchk:hover{background:var(--bg)}.fchk input{width:20px;height:20px;flex:0 0 auto;margin-top:2px;accent-color:var(--ok)}
 .fchk input:checked+span{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--ok)}
+
+/* ----- méditation du matin ----- */
+.tag.mat{background:#FFE9D6;color:#B5650A}
+.mdur{border:1px solid var(--gold);background:var(--gold-soft);border-radius:12px;padding:8px 12px;font-size:.95rem}
+.msec{display:grid;gap:6px;grid-template-columns:minmax(0,1fr);position:relative;padding-left:34px}
+.msec>.mnum,.msec summary .mnum{position:absolute;left:0;top:2px;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--gold);color:#2A1C00;font-weight:800;font-size:.82rem}
+.msec>b{align-self:center;min-height:26px;display:flex;align-items:center}
+details.msec{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:12px;padding:10px 12px 10px 46px;background:var(--surface)}
+details.msec summary{cursor:pointer;list-style:none;position:relative}details.msec summary .mnum{left:-36px;top:-2px}
+details.msec .tf{margin-top:10px}
 </style>
 </head><body>
 
@@ -1364,12 +1374,25 @@ document.addEventListener('drop',e=>{const bd=e.target.closest&&e.target.closest
 /* ===== Enseignements : préparer, dicter, importer et exporter en Word ===== */
 let TEACH={};
 const TSEC=[['intro','Introduction'],['application','Application pour nous aujourd\'hui'],['conclusion','Conclusion'],['sujets','Sujets de prière de l\'enseignement']];
-function tNew(mode){const id='T'+Date.now();return{id,mode,titre:'',date:todayISO(),ref:'',texte:'',intro:'',points:mode==='guide'?[{ref:'',expl:'',sujets:''}]:[],application:'',conclusion:'',sujets:'',cree:new Date().toISOString(),maj:'',par:''};}
+const MSEC=[['m_salut','👋 Salutation','Bien-aimés frères et sœurs, que la paix et la grâce du Seigneur Jésus-Christ soient avec vous en ce matin.',2],
+ ['m_pGrace','🙌 Action de grâce','Père céleste, merci pour le don de la vie, pour ce nouveau matin…',4],['m_pRepent','💧 Repentance et sang de Jésus','Seigneur, nous reconnaissons nos fautes… Nous nous plaçons sous le sang précieux de Jésus…',4],
+ ['m_pEsprit','🕊️ Invocation du Saint-Esprit','Saint-Esprit, viens remplir ce moment, ouvre nos cœurs à ta Parole…',3],['m_pCombat','⚔️ Combat spirituel','Au nom de Jésus, nous prenons autorité sur cette journée…',4],
+ ['m_pInter','🤲 Intercession','Seigneur, visite les malades, console ceux qui pleurent, bénis nos pasteurs et nos familles… Maintenant, parle-nous par ta Parole.',4]];
+function tMatinInit(t){if(t.mode!=='matin')return t;MSEC.forEach(([k,,,],i)=>{if(t[k]===undefined)t[k]=i===0?MSEC[0][2]:'';});['m_texteCite','m_contexte','m_vivre','m_priereFin'].forEach(k=>{if(t[k]===undefined)t[k]='';});
+  if(t.m_benediction===undefined)t.m_benediction='Que le Seigneur vous bénisse et vous garde. Bonne journée sous sa grâce toute nouvelle.';if(!Array.isArray(t.mvts)||!t.mvts.length)t.mvts=[{ref:'',expl:'',illus:''}];return t;}
+function tMatinParts(t){const P=[['Salutation',t.m_salut],['Prière d\'ouverture',[t.m_pGrace,t.m_pRepent,t.m_pEsprit,t.m_pCombat,t.m_pInter].filter(x=>(x||'').trim()).join('\n\n')],
+  ['Lecture du texte',(t.ref?'Écoutons '+t.ref+' : ':'')+(t.m_texteCite?'« '+t.m_texteCite.trim()+' »':'')],['Contexte',t.m_contexte]];
+  (t.mvts||[]).forEach((m,i)=>P.push(['Mouvement '+(i+1)+(m.ref?' — '+m.ref:''),[m.expl,m.illus].filter(x=>(x||'').trim()).join('\n')]));
+  const v=(t.m_vivre||'').split('\n').map(x=>x.replace(/^[-•\d.)\s]+/,'').trim()).filter(Boolean);const ord=['Premièrement','Deuxièmement','Troisièmement','Quatrièmement','Cinquièmement'];
+  P.push(['À vivre aujourd\'hui',v.length?'Je vous laisse avec '+(v.length===3?'trois':v.length)+' chose'+(v.length>1?'s':'')+' à vivre aujourd\'hui. '+v.map((x,i)=>(ord[i]||'Ensuite')+', '+x.charAt(0).toLowerCase()+x.slice(1)).join(' '):'']);
+  P.push(['Prière finale',t.m_priereFin],['Bénédiction et envoi',t.m_benediction]);return P.filter(p=>(p[1]||'').trim());}
+function tMinutes(t){return Math.max(1,Math.round(tWords(t)/130));}
+function tNew(mode){const id='T'+Date.now();return tMatinInit({id,mode,titre:'',date:todayISO(),ref:'',texte:'',intro:'',points:mode==='guide'?[{ref:'',expl:'',sujets:''}]:[],application:'',conclusion:'',sujets:'',cree:new Date().toISOString(),maj:'',par:''});}
 function tList(){const q=(UI.tq||'').toLowerCase(),f=UI.tfil||'all';return Object.values(TEACH).filter(t=>f==='all'||(f==='pub'?!!t.publie:!t.publie)).filter(t=>!q||[t.titre,t.ref,t.texte,t.intro].join(' ').toLowerCase().includes(q)).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.maj||'').localeCompare(a.maj||''));}
 function tPubTxt(t){return 'Publié le '+frDT(t.publie)+(t.publieOu?' · '+t.publieOu:'');}
 function tModAfter(t){return t.publie&&t.maj&&(new Date(t.maj)-new Date(t.publie)>60000);}
-function tWords(t){const s=t.mode==='libre'?t.texte:[t.intro,...t.points.map(p=>p.expl+' '+p.sujets),t.application,t.conclusion,t.sujets].join(' ');return (s.match(/\S+/g)||[]).length;}
-function tSubjCount(t){const c=s=>(s||'').split('\n').filter(x=>x.trim()).length;return t.mode==='libre'?0:t.points.reduce((a,p)=>a+c(p.sujets),0)+c(t.sujets);}
+function tWords(t){const s=t.mode==='matin'?tMatinParts(t).map(p=>p[1]).join(' '):t.mode==='libre'?t.texte:[t.intro,...t.points.map(p=>p.expl+' '+p.sujets),t.application,t.conclusion,t.sujets].join(' ');return (s.match(/\S+/g)||[]).length;}
+function tSubjCount(t){const c=s=>(s||'').split('\n').filter(x=>x.trim()).length;return t.mode==='libre'||t.mode==='matin'?0:t.points.reduce((a,p)=>a+c(p.sujets),0)+c(t.sujets);}
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 function micBtn(field){const on=UI.tmic===field;return '<button class="btn small mic'+(on?' on':'')+'" data-act="tmic" data-f="'+field+'" title="Dicter à la voix">'+ic('mic')+(on?'Arrêter':'Dicter')+'</button>';}
 function tArea(field,label,val,rows,ph){return '<div class="tf"><div class="tfh"><label for="tf-'+field+'">'+label+'</label>'+micBtn(field)+'</div>'+(UI.tmic===field?'<div class="interim" id="interim">À l\'écoute… parlez maintenant.</div>':'')+'<textarea id="tf-'+field+'" data-tf="'+field+'" rows="'+rows+'" placeholder="'+esc(ph||'')+'">'+esc(val||'')+'</textarea></div>';}
@@ -1377,28 +1400,43 @@ function tArea(field,label,val,rows,ph){return '<div class="tf"><div class="tfh"
 function vEns(){
   if(UI.tedit&&UI.tdraft)return tEditor();
   const L=tList();
-  let h='<div class="ens-hero"><div><h2 class="sec" style="margin:0">'+ic('pen')+'Mes enseignements</h2><p class="muted" style="margin:4px 0 0">Préparez votre enseignement de la semaine, à l\'écrit ou à la voix, puis exportez-le en Word.</p></div>'+
-    '<div class="row" style="gap:8px"><button class="btn gold" data-act="tnew" data-m="guide">'+ic('plus')+'Modèle guidé</button><button class="btn primary" data-act="tnew" data-m="libre">'+ic('pen')+'Texte libre</button><label class="btn" style="cursor:pointer">'+ic('up')+'Importer un Word<input type="file" id="timpf" accept=".docx" hidden></label></div></div>';
+  let h='<div class="ens-hero"><div><h2 class="sec" style="margin:0">'+ic('pen')+'Mes enseignements</h2><p class="muted" style="margin:4px 0 0">Préparez votre méditation du matin, à l\'écrit ou à la voix, puis exportez-la en Word ou en texte à lire.</p></div>'+
+    '<div class="row" style="gap:8px"><button class="btn gold" data-act="tnew" data-m="matin">🌅 Nouvelle méditation du matin</button><label class="btn" style="cursor:pointer">'+ic('up')+'Importer un Word<input type="file" id="timpf" accept=".docx" hidden></label></div></div>';
   if(!SR)h+='<div class="warnbox">La dictée vocale n\'est pas disponible dans ce navigateur. Utilisez Chrome (Android, PC) ou Safari (iPhone), ou le micro du clavier de votre téléphone.</div>';
   if(Object.keys(TEACH).length>3)h+='<label class="f" style="margin-bottom:12px">Rechercher<input type="search" id="tq" value="'+esc(UI.tq||'')+'" placeholder="Titre, texte biblique, mot…"></label>';
   const all=Object.values(TEACH),np=all.filter(t=>t.publie).length;
   if(all.length)h+='<div class="tfil">'+[['all','Tous',all.length],['draft','Brouillons',all.length-np],['pub','Publiés',np]].map(([k,l,n])=>'<button class="pchip" data-act="tfil" data-f="'+k+'" aria-pressed="'+((UI.tfil||'all')===k)+'">'+l+' <b>'+n+'</b></button>').join('')+'</div>';
-  if(!L.length){h+='<div class="card empty-t"><div class="big">'+ic('lamp')+'</div><b>'+(UI.tq?'Aucun enseignement trouvé.':'Aucun enseignement pour l\'instant.')+'</b><p class="muted">'+(UI.tq?'Essayez un autre mot.':'Choisissez « Modèle guidé » (introduction, points avec versets et sujets de prière, application, conclusion) ou « Texte libre ».')+'</p></div>';return h;}
+  if(!L.length){h+='<div class="card empty-t"><div class="big">'+ic('lamp')+'</div><b>'+(UI.tq?'Aucun enseignement trouvé.':'Aucun enseignement pour l\'instant.')+'</b><p class="muted">'+(UI.tq?'Essayez un autre mot.':'Touchez « Nouvelle méditation du matin » : salutation, prière d\'ouverture, lecture du texte, contexte, mouvements, à vivre aujourd\'hui, prière finale et bénédiction.')+'</p></div>';return h;}
   h+='<div class="tgrid">';
   L.forEach(t=>{h+='<button class="tcard'+(t.publie?' is-pub':'')+'" data-act="topen" data-id="'+esc(t.id)+'"><span class="tdate">'+ic('cal')+esc(frDate(t.date))+'</span><span class="ttl">'+esc(t.titre||'Sans titre')+'</span>'+(t.publie?'<span class="pub">'+ic('check')+esc(tPubTxt(t))+'</span>'+(tModAfter(t)?'<span class="pubmod">Modifié après publication</span>':''):'<span class="draft">'+ic('pen')+'Brouillon</span>')+(t.ref?'<span class="tref">'+ic('book')+esc(t.ref)+'</span>':'')+
-    '<span class="tmeta"><span class="tag '+(t.mode==='libre'?'lib':'gui')+'">'+(t.mode==='libre'?'Texte libre':'Modèle guidé')+'</span>'+(t.mode!=='libre'?'<span>'+t.points.length+' point'+(t.points.length>1?'s':'')+'</span><span>'+tSubjCount(t)+' sujet'+(tSubjCount(t)>1?'s':'')+'</span>':'')+'<span>'+tWords(t)+' mots</span></span>'+
+    '<span class="tmeta"><span class="tag '+({libre:'lib',matin:'mat'}[t.mode]||'gui')+'">'+({libre:'Texte libre',matin:'Méditation du matin'}[t.mode]||'Modèle guidé')+'</span>'+(t.mode==='matin'?'<span>'+(t.mvts||[]).length+' mouvement'+((t.mvts||[]).length>1?'s':'')+'</span><span>≈ '+tMinutes(t)+' min à voix haute</span>':'')+(t.mode==='guide'?'<span>'+t.points.length+' point'+(t.points.length>1?'s':'')+'</span><span>'+tSubjCount(t)+' sujet'+(tSubjCount(t)>1?'s':'')+'</span>':'')+'<span>'+tWords(t)+' mots</span></span>'+
     (t.maj?'<span class="tby">Modifié '+esc(shortDT(t.maj))+(t.par?' · '+esc(t.par):'')+'</span>':'')+'</button>';});
   h+='</div>';
   if(L.length>1)h+='<div class="row" style="margin-top:14px"><button class="btn" data-act="texpall">'+ic('down')+'Exporter tous les enseignements (Word)</button></div>';
   return h;}
 
 function tEditor(){
-  const t=UI.tdraft;let h='<div class="tbar"><button class="btn" data-act="tclose">'+ic('left')+'<span class="tback">Mes enseignements</span><span class="tbk2">Retour</span></button><span class="row" style="flex:0 0 auto;gap:6px"><button class="btn primary" data-act="tsave">'+ic('check')+'Enregistrer</button><button class="btn gold" data-act="texp">'+ic('down')+'Word</button></span></div>';
+  const t=UI.tdraft;let h='<div class="tbar"><button class="btn" data-act="tclose">'+ic('left')+'<span class="tback">Mes enseignements</span><span class="tbk2">Retour</span></button><span class="row" style="flex:0 0 auto;gap:6px"><button class="btn primary" data-act="tsave">'+ic('check')+'Enregistrer</button><button class="btn gold" data-act="texp">'+ic('down')+'Word</button>'+(t.mode==='matin'?'<button class="btn" data-act="tread" title="Texte continu pour l\'enregistrement audio">🎙️ Texte à lire</button>':'')+'</span></div>';
   h+=t.publie?'<div class="pubban on"><div class="pbi">'+ic('check')+'</div><div class="pbt"><b>Publié</b><span>le '+esc(frDT(t.publie))+(t.publiePar?' par '+esc(t.publiePar):'')+'</span>'+(tModAfter(t)?'<span class="pubmod">Modifié depuis, le '+esc(frDT(t.maj))+'</span>':'')+'<label class="f" style="margin-top:6px">Où ? (facultatif)<input type="text" id="tf-publieOu" data-tf="publieOu" value="'+esc(t.publieOu||'')+'" placeholder="ex. Culte du dimanche, groupe WhatsApp…"></label></div><button class="btn small" data-act="tunpub">Annuler la publication</button></div>'
     :'<div class="pubban"><div class="pbi">'+ic('pen')+'</div><div class="pbt"><b>Brouillon</b><span>Pas encore publié</span></div><button class="btn gold" data-act="tpub">'+ic('check')+'Marquer comme publié</button></div>';
   h+='<div class="card tedit"><div class="row"><label class="f" style="flex:3 1 260px">Titre de l\'enseignement<input type="text" id="tf-titre" data-tf="titre" value="'+esc(t.titre)+'" placeholder="ex. La foi qui déplace les montagnes"></label><label class="f">Date<input type="date" id="tf-date" data-tf="date" value="'+esc(t.date)+'"></label></div>'+
-    '<div class="row"><label class="f" style="flex:3 1 260px">Texte biblique de base<input type="text" id="tf-ref" data-tf="ref" value="'+esc(t.ref)+'" placeholder="ex. Marc 11:20-25"></label><label class="f">Forme<select id="tf-mode" data-tf="mode"><option value="guide" '+(t.mode!=='libre'?'selected':'')+'>Modèle guidé</option><option value="libre" '+(t.mode==='libre'?'selected':'')+'>Texte libre</option></select></label></div>';
-  if(t.mode==='libre'){h+=tArea('texte','Mon enseignement',t.texte,18,'Écrivez ou dictez votre enseignement ici…');}
+    '<div class="row"><label class="f" style="flex:3 1 260px">Texte biblique de base<input type="text" id="tf-ref" data-tf="ref" value="'+esc(t.ref)+'" placeholder="ex. Marc 11:20-25"></label>'+(t.mode==='matin'?'':'<label class="f">Ancien format<select id="tf-mode" data-tf="mode"><option value="'+esc(t.mode)+'" selected>'+(t.mode==='libre'?'Texte libre':'Modèle guidé')+'</option><option value="matin">→ Passer en Méditation du matin</option></select></label>')+'</div>';
+  if(t.mode==='matin'){tMatinInit(t);
+    h+='<div class="mdur">⏱ Durée à voix haute : <b>≈ '+tMinutes(t)+' min</b> <span class="muted">('+tWords(t)+' mots, à environ 130 mots par minute)</span></div>';
+    h+='<div class="msec"><span class="mnum">1</span>'+tArea('m_salut','👋 Salutation',t.m_salut,2,MSEC[0][2])+'</div>';
+    h+='<details class="msec mpr" '+(UI.tprOpen===false?'':'open')+'><summary><span class="mnum">2</span><b>🙏 Prière d\'ouverture</b> <span class="muted">(5 temps)</span></summary>'+MSEC.slice(1).map(([k,l,ph,r])=>tArea(k,l,t[k],r,ph)).join('')+'</details>';
+    h+='<div class="msec"><span class="mnum">3</span>'+tArea('m_texteCite','📖 Lecture du texte (citez le passage en entier)',t.m_texteCite,4,'« Voici ce que je veux repasser en mon cœur… »')+'</div>';
+    h+='<div class="msec"><span class="mnum">4</span>'+tArea('m_contexte','🧭 Contexte et pont vers la vie de l\'auditeur',t.m_contexte,5,'Où et pourquoi ce texte a été écrit… Frère, sœur, peut-être que tu te réveilles ce matin avec…')+'</div>';
+    h+='<div class="msec"><span class="mnum">5</span><b>🪜 Mouvements du texte (verset par verset)</b></div>';
+    t.mvts.forEach((m,i)=>{h+='<div class="tpoint"><div class="tph"><span class="pnum">'+(i+1)+'</span><b>Mouvement '+(i+1)+'</b><span style="flex:1"></span>'+(i>0?'<button class="btn small" data-act="tmvup" data-i="'+i+'" title="Monter">↑</button>':'')+'<button class="btn small danger" data-act="tmvdel" data-i="'+i+'">'+ic('trash')+'</button></div>'+
+      '<label class="f">Verset(s)<input type="text" id="tf-mv'+i+'ref" data-tm="'+i+'" data-k="ref" value="'+esc(m.ref)+'" placeholder="ex. v. 21"></label>'+
+      tArea('mv'+i+'expl','Explication',m.expl,5,'Remarquez comment… Ce que dit le verset, ce qu\'il veut dire pour nous ce matin…')+tArea('mv'+i+'illus','Illustration biblique (facultatif)',m.illus,3,'Pensez à la manne dans le désert… Abraham, Joseph, Daniel…')+'</div>';});
+    h+='<button class="btn add-pt" data-act="tmvadd">'+ic('plus')+'Ajouter un mouvement</button>';
+    h+='<div class="msec"><span class="mnum">6</span>'+tArea('m_vivre','✅ À vivre aujourd\'hui (une chose par ligne, idéalement 3)',t.m_vivre,4,'Choisissez de vous souvenir : …\nRecevez la grâce de ce matin : …\nDéclarez votre espérance : …')+'</div>';
+    h+='<div class="msec"><span class="mnum">7</span>'+tArea('m_priereFin','🙏 Prière finale (qui reprend le message)',t.m_priereFin,5,'Père céleste, merci pour ce nouveau matin…')+'</div>';
+    h+='<div class="msec"><span class="mnum">8</span>'+tArea('m_benediction','✨ Bénédiction et envoi',t.m_benediction,2,'')+'</div>';
+  }
+  else if(t.mode==='libre'){h+=tArea('texte','Mon enseignement',t.texte,18,'Écrivez ou dictez votre enseignement ici…');}
   else{
     h+=tArea('intro','Introduction',t.intro,4,'Comment allez-vous introduire le sujet ?');
     t.points.forEach((p,i)=>{h+='<div class="tpoint"><div class="tph"><span class="pnum">'+(i+1)+'</span><b>Point '+(i+1)+'</b><span style="flex:1"></span>'+(i>0?'<button class="btn small" data-act="tptup" data-i="'+i+'" title="Monter">↑</button>':'')+'<button class="btn small danger" data-act="tptdel" data-i="'+i+'">'+ic('trash')+'</button></div>'+
@@ -1443,20 +1481,22 @@ function tStartMic(field){
   try{r.start();}catch(e){tStopMic();render();toast('Impossible de démarrer la dictée.');}}
 
 /* ----- champs ----- */
-function setField(f,v){if(f.indexOf('fx_')===0){if(typeof fSet==='function'){const k=f.slice(3);fSet(k==='date'?'date':k,v);}return;}const t=UI.tdraft;if(!t)return;const m=f.match(/^p(\d+)(expl|sujets)$/);if(m){t.points[+m[1]][m[2]]=v;}else t[f]=v;}
+function setField(f,v){if(f.indexOf('fx_')===0){if(typeof fSet==='function'){const k=f.slice(3);fSet(k==='date'?'date':k,v);}return;}const t=UI.tdraft;if(!t)return;const m=f.match(/^p(\d+)(expl|sujets)$/),mv=f.match(/^mv(\d+)(expl|illus)$/);if(m){t.points[+m[1]][m[2]]=v;}else if(mv){t.mvts[+mv[1]][mv[2]]=v;}else t[f]=v;if(t.mode==='matin'){const d=document.querySelector('.mdur b');if(d)d.textContent='≈ '+tMinutes(t)+' min';}}
 document.addEventListener('input',e=>{const el=e.target;
   if(el.id==='tq'){UI.tq=el.value;clearTimeout(vEns._q);vEns._q=setTimeout(()=>{render();},250);return;}
   if(!UI.tdraft)return;
   if(el.dataset.tf&&el.dataset.tf!=='mode'){setField(el.dataset.tf,el.value);tAutosave();}
-  else if(el.dataset.tp!==undefined){UI.tdraft.points[+el.dataset.tp][el.dataset.k]=el.value;tAutosave();}});
+  else if(el.dataset.tp!==undefined){UI.tdraft.points[+el.dataset.tp][el.dataset.k]=el.value;tAutosave();}
+  else if(el.dataset.tm!==undefined){UI.tdraft.mvts[+el.dataset.tm][el.dataset.k]=el.value;tAutosave();}});
 document.addEventListener('change',async e=>{const el=e.target;
   if(el.id==='tf-mode'&&UI.tdraft){const t=UI.tdraft;t.mode=el.value;
+    if(t.mode==='matin'){tMatinInit(t);if(!t.m_contexte.trim()&&(t.intro||t.texte||'').trim())t.m_contexte=(t.intro||t.texte).trim();}
     if(t.mode==='guide'&&!t.points.length)t.points.push({ref:'',expl:'',sujets:''});
     if(t.mode==='libre'&&!t.texte.trim())t.texte=tPlain(t,false);
     if(t.mode==='guide'&&!t.intro.trim()&&t.texte.trim())t.intro=t.texte;
     tStopMic();render();tAutosave();}
-  if(el.id==='timpf'&&el.files[0]){const f=el.files[0];el.value='';try{const r=await tReadDocx(f);const t=tNew('libre');t.titre=r.title||f.name.replace(/\.docx$/i,'');t.texte=r.body;t.ref=r.ref||'';TEACH[t.id]=t;UI.tedit=t.id;UI.tdraft=JSON.parse(JSON.stringify(t));tCommit(false);render();toast('Enseignement importé : vérifiez et modifiez-le.');}catch(err){toast('Import impossible : '+(err.message||err));}}
-  if(el.id==='tappf'&&el.files[0]&&UI.tdraft){const f=el.files[0];el.value='';try{const r=await tReadDocx(f);const t=UI.tdraft;const add=(r.title?r.title+'\n':'')+r.body;if(t.mode==='libre')t.texte=(t.texte.trim()?t.texte.trim()+'\n\n':'')+add;else t.conclusion=(t.conclusion.trim()?t.conclusion.trim()+'\n\n':'')+add;render();tAutosave();toast(t.mode==='libre'?'Texte ajouté à la fin.':'Texte ajouté dans « Conclusion » : déplacez-le où vous voulez.');}catch(err){toast('Import impossible : '+(err.message||err));}}
+  if(el.id==='timpf'&&el.files[0]){const f=el.files[0];el.value='';try{const r=await tReadDocx(f);const t=tNew('matin');t.titre=r.title||f.name.replace(/\.docx$/i,'');t.m_contexte=r.body;t.ref=r.ref||'';TEACH[t.id]=t;UI.tedit=t.id;UI.tdraft=JSON.parse(JSON.stringify(t));tCommit(false);render();toast('Enseignement importé : vérifiez et modifiez-le.');}catch(err){toast('Import impossible : '+(err.message||err));}}
+  if(el.id==='tappf'&&el.files[0]&&UI.tdraft){const f=el.files[0];el.value='';try{const r=await tReadDocx(f);const t=UI.tdraft;const add=(r.title?r.title+'\n':'')+r.body;if(t.mode==='matin')t.m_contexte=((t.m_contexte||'').trim()?t.m_contexte.trim()+'\n\n':'')+add;else if(t.mode==='libre')t.texte=(t.texte.trim()?t.texte.trim()+'\n\n':'')+add;else t.conclusion=(t.conclusion.trim()?t.conclusion.trim()+'\n\n':'')+add;render();tAutosave();toast(t.mode==='libre'?'Texte ajouté à la fin.':'Texte ajouté dans « Conclusion » : déplacez-le où vous voulez.');}catch(err){toast('Import impossible : '+(err.message||err));}}
 });
 async function tReadDocx(f){if(!window.mammoth)throw new Error("le module Word n'est pas chargé (ouvrez l'appli une fois avec du réseau)");
   const r=await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()});
@@ -1465,7 +1505,7 @@ async function tReadDocx(f){if(!window.mammoth)throw new Error("le module Word n
   return{title,ref,body:lines.join('\n').replace(/\n{3,}/g,'\n\n').trim()};}
 
 /* ----- actions ----- */
-document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;if(a[0]!=='t'||!/^t(new|open|close|save|exp|expall|del|delok|delno|mic|ptadd|ptdel|ptup|pub|unpub|fil)$/.test(a))return;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;if(a[0]!=='t'||!/^t(new|open|close|save|exp|expall|del|delok|delno|mic|ptadd|ptdel|ptup|pub|unpub|fil|mvadd|mvdel|mvup|read)$/.test(a))return;
   e.preventDefault();const i=+b.dataset.i,t=UI.tdraft;
   switch(a){
   case 'tnew':{const n=tNew(b.dataset.m);UI.tedit=n.id;UI.tdraft=n;UI.tconf=false;render();window.scrollTo(0,0);setTimeout(()=>{const x=$('#tf-titre');if(x)x.focus();},50);break;}
@@ -1483,22 +1523,30 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(
   case 'tmic':{const f=b.dataset.f;if(UI.tmic===f){tStopMic();render();tCommit(false);}else tStartMic(f);break;}
   case 'tptadd':t.points.push({ref:'',expl:'',sujets:''});render();tAutosave();setTimeout(()=>{const x=$('#tf-p'+(t.points.length-1)+'ref');if(x){x.focus();x.scrollIntoView({block:'center'});}},50);break;
   case 'tptdel':tStopMic();t.points.splice(i,1);render();tAutosave();break;
+  case 'tmvadd':t.mvts.push({ref:'',expl:'',illus:''});render();tAutosave();setTimeout(()=>{const x=$('#tf-mv'+(t.mvts.length-1)+'ref');if(x){x.focus();x.scrollIntoView({block:'center'});}},50);break;
+  case 'tmvdel':tStopMic();t.mvts.splice(i,1);if(!t.mvts.length)t.mvts.push({ref:'',expl:'',illus:''});render();tAutosave();break;
+  case 'tmvup':if(i>0){tStopMic();[t.mvts[i-1],t.mvts[i]]=[t.mvts[i],t.mvts[i-1]];render();tAutosave();}break;
+  case 'tread':tCommit(false);tExport([UI.tdraft],false,true);break;
   case 'tptup':if(i>0){tStopMic();[t.points[i-1],t.points[i]]=[t.points[i],t.points[i-1]];render();tAutosave();}break;
   }},true);
 
 /* ----- texte lisible (classeur, recherche) et Word ----- */
 function tPlain(t,head=true){const L=[];if(head){L.push(t.titre||'Sans titre');if(t.ref)L.push('Texte : '+t.ref);if(t.publie)L.push(tPubTxt(t));L.push('');}
   if(t.mode==='libre'){L.push(t.texte);return L.join('\n').trim();}
+  if(t.mode==='matin'){tMatinParts(t).forEach(([l,v])=>L.push(l.toUpperCase(),v.trim(),''));L.push('Durée à voix haute : ≈ '+tMinutes(t)+' min');return L.join('\n').trim();}
   if(t.intro)L.push('INTRODUCTION',t.intro,'');
   t.points.forEach((p,i)=>{L.push('POINT '+(i+1)+(p.ref?' — '+p.ref:''));if(p.expl)L.push(p.expl);const s=(p.sujets||'').split('\n').filter(x=>x.trim());if(s.length){L.push('Sujets de prière :');s.forEach((x,k)=>L.push((k+1)+'. '+x.trim()));}L.push('');});
   if(t.application)L.push('APPLICATION',t.application,'');if(t.conclusion)L.push('CONCLUSION',t.conclusion,'');
   const s=(t.sujets||'').split('\n').filter(x=>x.trim());if(s.length){L.push('SUJETS DE PRIÈRE');s.forEach((x,k)=>L.push((k+1)+'. '+x.trim()));}
   return L.join('\n').trim();}
 function tParas(txt,o){return (txt||'').split('\n').map(x=>x.trim()).filter(Boolean).map(x=>wp(x,o||{})).join('');}
-function tDocBody(t,first){let b='';
+function tDocBody(t,first,read){let b='';
+  if(read&&t.mode==='matin'){b+=wp((t.titre||'Méditation du matin')+(t.ref?' — '+t.ref:''),{style:'Title',after:80});b+=wp('Texte à lire · ≈ '+tMinutes(t)+' min à voix haute · '+frDate(t.date||todayISO()),{i:true,color:'56656D',after:240});
+    tMatinParts(t).forEach(([,v])=>{b+=tParas(v,{sz:26});b+=wp('',{after:120});});return b;}
   if(!first)b+='<w:p><w:r><w:br w:type="page"/></w:r></w:p>';b+=wp(t.titre||'Sans titre',{style:'Title',after:80});
   b+=wp([t.date?frDate(t.date):'',t.ref?'Texte biblique : '+t.ref:''].filter(Boolean).join(' · '),{i:true,color:'56656D',after:t.publie?60:240});if(t.publie)b+=wp('✓ '+tPubTxt(t),{b:true,color:'148A55',after:240});
   if(t.mode==='libre'){b+=tParas(t.texte);return b;}
+  if(t.mode==='matin'){b+=wp('Méditation du matin · durée à voix haute ≈ '+tMinutes(t)+' min',{color:'B5650A',b:true,after:160});tMatinParts(t).forEach(([l,v])=>{b+=wp(l,{style:/^Mouvement/.test(l)?'Heading2':'Heading1'});b+=tParas(v);});return b;}
   if(t.intro.trim()){b+=wp('Introduction',{style:'Heading1'});b+=tParas(t.intro);}
   t.points.forEach((p,i)=>{b+=wp('Point '+(i+1)+(p.ref?' — '+p.ref:''),{style:'Heading1'});b+=tParas(p.expl);
     const s=(p.sujets||'').split('\n').filter(x=>x.trim());if(s.length){b+=wp('Sujets de prière',{style:'Heading2'});s.forEach((x,k)=>b+=wp((k+1)+'. '+x.trim(),{ind:360}));}});
@@ -1506,10 +1554,10 @@ function tDocBody(t,first){let b='';
   if(t.conclusion.trim()){b+=wp('Conclusion',{style:'Heading1'});b+=tParas(t.conclusion);}
   const s=(t.sujets||'').split('\n').filter(x=>x.trim());if(s.length){b+=wp('Sujets de prière de l\'enseignement',{style:'Heading1'});s.forEach((x,k)=>b+=wp((k+1)+'. '+x.trim(),{ind:360}));}
   return b;}
-async function tExport(list,all){
+async function tExport(list,all,read){
   if(!window.JSZip){toast("Le module Word n'a pas pu être chargé (ouvrez l'appli une fois avec du réseau).");return;}
   if(!list.length||!list[0]){toast('Rien à exporter.');return;}
-  let body='';list.forEach((t,k)=>body+=tDocBody(t,k===0));
+  let body='';list.forEach((t,k)=>body+=tDocBody(t,k===0,read));
   const doc='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+body+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr></w:body></w:document>';
   const st=(id,name,sz,color,extra)=>'<w:style w:type="paragraph" w:styleId="'+id+'"><w:name w:val="'+name+'"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/>'+(extra||'')+'</w:pPr><w:rPr><w:b/><w:color w:val="'+color+'"/><w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/></w:rPr></w:style>';
   const styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Sansation" w:hAnsi="Sansation" w:eastAsia="Sansation" w:cs="Sansation"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="100" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr></w:pPrDefault></w:docDefaults>'+
@@ -1521,7 +1569,7 @@ async function tExport(list,all){
   z.file('word/_rels/document.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
   z.file('word/document.xml',doc);z.file('word/styles.xml',styles);
   const t=list[0],safe=s=>(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,50);
-  const name=all?'Mes_enseignements_'+todayISO()+'.docx':'Enseignement_'+(t.date||todayISO())+(t.titre?'_'+safe(t.titre):'')+'.docx';
+  const name=all?'Mes_enseignements_'+todayISO()+'.docx':(read?'Texte_a_lire_':'Enseignement_')+(t.date||todayISO())+(t.titre?'_'+safe(t.titre):'')+'.docx';
   await save(name,await z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));}
 
 /* ----- lecture en plein écran ----- */
